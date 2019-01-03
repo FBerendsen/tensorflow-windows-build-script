@@ -10,7 +10,9 @@ param (
     [switch]$ReserveSource = $false,
     [switch]$ReserveVenv = $false,
     [switch]$IgnoreDepsVersionIssues = $false,
-    [switch]$InstallDefaultDeps = $false
+    [switch]$InstallDefaultDeps = $false,
+    [Parameter(Mandatory=$false)][string]$PythonCerts, # path to a modified cacert.pem for pip install (optional; in case of firewall)
+    [Parameter(Mandatory=$false)][string]$JavaCerts # path to a modified cacerts for bazel build (optional; in case of firewall)
 )
 
 # Set parameters for execution.
@@ -190,9 +192,15 @@ if (! $ReserveVenv) {
     mkdir $venvDir | Out-Null
     py -3 -m venv venv
     .\venv\Scripts\Activate.ps1
-    pip3 install six numpy wheel
-    pip3 install keras_applications==1.0.5 --no-deps
-    pip3 install keras_preprocessing==1.0.3 --no-deps
+	
+	$PipCertParameters = ""
+	if ($PythonCerts) {
+		$PipCertParameters = "--cert " + $PythonCerts
+	}
+
+    pip3 install six numpy wheel $PipCertParameters
+    pip3 install keras_applications==1.0.5 --no-deps $PipCertParameters
+    pip3 install keras_preprocessing==1.0.3 --no-deps $PipCertParameters
 }
 
 Set-Location $sourceDir
@@ -209,8 +217,14 @@ $ENV:PYTHON_LIB_PATH = "$VenvDir/lib/site-packages" -replace '[\\]', '/'
 
 py configure.py
 
+$BazelCertParameters = ""
+if ($JavaCerts) {
+    $BazelCertParameters = "--host_jvm_args=-Djavax.net.ssl.trustStore=" + $JavaCerts
+}
+
+
 # Build
-Invoke-Expression ("bazel build " + $BazelBuildParameters)
+Invoke-Expression ("bazel " $BazelCertParameters + " build " + $BazelBuildParameters)
 
 # Shutdown Bazel
 bazel shutdown

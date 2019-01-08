@@ -198,9 +198,9 @@ if (! $ReserveVenv) {
 		$PipCertParameters = "--cert " + $PythonCerts
 	}
 
-    pip3 install six numpy wheel $PipCertParameters
-    pip3 install keras_applications==1.0.5 --no-deps $PipCertParameters
-    pip3 install keras_preprocessing==1.0.3 --no-deps $PipCertParameters
+    Invoke-Expression ("pip3 install six numpy wheel" + $PipCertParameters)
+    Invoke-Expression ("pip3 install keras_applications==1.0.5 --no-deps" + $PipCertParameters)
+    Invoke-Expression ("pip3 install keras_preprocessing==1.0.3 --no-deps" + $PipCertParameters)
 }
 
 Set-Location $sourceDir
@@ -224,7 +224,7 @@ if ($JavaCerts) {
 
 
 # Build
-Invoke-Expression ("bazel " $BazelCertParameters + " build " + $BazelBuildParameters)
+Invoke-Expression ("bazel " + $BazelCertParameters + " build " + $BazelBuildParameters)
 
 # Shutdown Bazel
 bazel shutdown
